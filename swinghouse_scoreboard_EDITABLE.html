@@ -1,0 +1,234 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Swing House – Scoreboard (Éditable)</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b1010; --card:#131c1a; --ink:#f7f7f5; --muted:#98a29d; --a:#2449ff; --b:#da2b2b; --ring:#28433a; }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:radial-gradient(1400px 600px at 0% 0%,#0e201a,#0b1010), #0b1010;color:var(--ink);font-family:'Montserrat',system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1500px;margin:0 auto;padding:18px}
+  /* Header */
+  .sticky{position:sticky;top:0;z-index:100;background:rgba(11,16,16,.86);backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,.06);}
+  .head{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;padding:14px 12px}
+  .box{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;min-height:72px}
+  .box.left{border-left:6px solid var(--a)}
+  .box.right{border-right:6px solid var(--b)}
+  .team{font-weight:800;letter-spacing:.8px}
+  .score{font-size:clamp(34px,6vw,72px);font-weight:800}
+  .title{font-weight:800;letter-spacing:1px;opacity:.9;text-transform:uppercase}
+  .barwrap{margin:10px 12px 14px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#0f1715}
+  .bar{display:flex;height:28px}
+  .barA{background:linear-gradient(90deg,#2036c5,#2449ff);transition:width .5s ease}
+  .barB{background:linear-gradient(90deg,#a01414,#da2b2b);transition:width .5s ease}
+  .legend{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);padding:6px 8px 10px}
+
+  /* Table */
+  .section{margin:16px 4px 80px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02))}
+  .secHead{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+  .badge{font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,.2);padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06)}
+  .grid{display:grid;grid-template-columns:120px 1fr 1fr 180px 120px 120px 160px;gap:10px;padding:16px}
+  .h{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+  .cell{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;min-height:44px;display:flex;align-items:center;justify-content:flex-start;position:relative}
+  .cell[contenteditable="true"]{outline:none}
+  .cell:focus-within{box-shadow:0 0 0 3px var(--ring);border-color:#2d4f44}
+  .right{text-align:right;justify-content:flex-end}
+  .meta{position:absolute;right:8px;bottom:6px;font-size:10px;color:#9fb3ac;opacity:0;transition:opacity .2s}
+  .cell.saved .meta{opacity:1}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:800;font-size:12px}
+  .pillA{background:color-mix(in srgb, var(--a) 28%, #fff 0%)}
+  .pillB{background:color-mix(in srgb, var(--b) 28%, #fff 0%)}
+  .pillD{background:rgba(255,255,255,.16)}
+  .footer{position:fixed;left:12px;bottom:12px;font-size:12px;color:#cbd4cf;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.16);padding:8px 10px;border-radius:10px}
+  .btn{cursor:pointer; padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;margin-left:8px}
+  .ok{color:#6ef3a5}
+  .err{color:#ff8b8b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sticky">
+    <div class="head">
+      <div class="box left"><div class="team" id="tA">EUROPE</div><div class="score" id="sA">0</div></div>
+      <div class="title">RYDER CUP • SWING HOUSE</div>
+      <div class="box right"><div class="score" id="sB">0</div><div class="team" id="tB">USA</div></div>
+    </div>
+    <div class="barwrap">
+      <div class="bar">
+        <div id="barA" class="barA" style="width:50%"></div>
+        <div id="barB" class="barB" style="width:50%"></div>
+      </div>
+      <div class="legend"><span id="legA">Europe 0</span><span id="legM">Total 0</span><span id="legB">USA 0</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="secHead"><div style="font-weight:800;font-size:18px">Feuille de match</div><div class="badge" id="badge">12 lignes</div><div id="sync" class="badge">Sync: prêt</div></div>
+    <div class="grid" id="grid">
+      <!-- Headers -->
+      <div class="h">Match</div>
+      <div class="h">Team Europe</div>
+      <div class="h">Team USA</div>
+      <div class="h">Format</div>
+      <div class="h right">Europe</div>
+      <div class="h right">USA</div>
+      <div class="h">Statut</div>
+      <!-- Rows will be injected -->
+    </div>
+  </div>
+</div>
+
+<div class="footer" id="foot">Mode: GViz • Lignes: 0</div>
+
+<script>
+const SHEET_GVIZ = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRFCwy-RnjGH5OJE-IYBm71aEez5wqUgHrcMUjsxlnzXR74U7Rbu-UlDmewxzw4rveDuq7HHN6Xti_E/gviz/tq?gid=0&tqx=out:json";
+const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRFCwy-RnjGH5OJE-IYBm71aEez5wqUgHrcMUjsxlnzXR74U7Rbu-UlDmewxzw4rveDuq7HHN6Xti_E/pub?gid=0&single=true&output=csv";
+const WRITE_URL = "https://script.google.com/macros/s/AKfycbwgDuc9027PF6McYPQ_6A38svQPJiMsKPCvJPj4lUKi_YTCuSk13GEPHeNFKYyB0tWm/exec";
+const ROWS = 12; // lignes 2->13
+const COLS = 7;  // A..G
+
+function parseNum(s){
+  if(s==null) return 0;
+  let t = String(s).trim();
+  if(!t) return 0;
+  if(/^A\/?S$/i.test(t)||/^AS$/i.test(t)) return 0.5;
+  t = t.replace('½','.5').replace(',','.');
+  const m = t.match(/-?\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : 0;
+}
+
+function cell(id){ return document.getElementById(id); }
+
+function renderRows(data){
+  const grid = cell("grid");
+  // wipe existing rows
+  const keep = 7; // header cells count
+  while(grid.children.length > keep) grid.removeChild(grid.lastChild);
+
+  let sumA=0,sumB=0;
+
+  for(let r=0;r<ROWS;r++){
+    const row = data[r] || [];
+    const c = new Array(COLS).fill("").map((_,i)=> (row[i] ?? ""));
+
+    sumA += parseNum(c[4]);
+    sumB += parseNum(c[5]);
+
+    for(let col=0; col<COLS; col++){
+      const div = document.createElement("div");
+      div.className = "cell" + (col>=4 && col<=5 ? " right" : "");
+      div.contentEditable = "true";
+      div.textContent = c[col];
+      div.dataset.row = r + 2; // row index in Sheet (2..13)
+      div.dataset.col = col + 1; // col index in Sheet (1..7)
+      div.dataset.orig = c[col];
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = "Enregistré";
+      div.appendChild(meta);
+
+      const save = async (value) => {
+        // Exit if no endpoint provided
+        if(!WRITE_URL || WRITE_URL.includes("REPLACE_WITH")) return;
+        cell("sync").textContent = "Sync: en cours…";
+        try{
+          await fetch(WRITE_URL, {
+            method: "POST",
+            mode: "no-cors", // simplifie CORS côté Apps Script
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+              row: parseInt(div.dataset.row,10),
+              col: parseInt(div.dataset.col,10),
+              value: value
+            })
+          });
+          div.dataset.orig = value;
+          div.classList.add("saved");
+          setTimeout(()=>div.classList.remove("saved"), 800);
+          cell("sync").textContent = "Sync: ok";
+        }catch(e){
+          cell("sync").textContent = "Sync: erreur";
+          console.error(e);
+        }
+      };
+
+      let timer=null;
+      const trigger = () => {
+        const val = div.textContent;
+        if(val === div.dataset.orig) return;
+        clearTimeout(timer);
+        timer = setTimeout(()=> save(val), 350);
+      };
+      div.addEventListener("blur", trigger);
+      div.addEventListener("keydown", (e)=>{
+        if(e.key==="Enter"){ e.preventDefault(); div.blur(); }
+      });
+
+      grid.appendChild(div);
+    }
+  }
+
+  // scores + bar
+  const tot = sumA + sumB || 1;
+  cell("sA").textContent = Math.round(sumA*2)/2;
+  cell("sB").textContent = Math.round(sumB*2)/2;
+  cell("barA").style.width = (sumA/tot*100)+"%";
+  cell("barB").style.width = (sumB/tot*100)+"%";
+  cell("legA").textContent = "Europe " + cell("sA").textContent;
+  cell("legB").textContent = "USA " + cell("sB").textContent;
+  cell("legM").textContent = "Total " + Math.round(tot*2)/2;
+}
+
+async function fetchGVizRows() {
+  const res = await fetch(SHEET_GVIZ + "&cb=" + Date.now(), { cache: "no-store" });
+  const txt = await res.text();
+  const json = JSON.parse(txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+  return (json.table && json.table.rows)
+    ? json.table.rows.map(r => (r.c || []).map(x => x && x.v != null ? x.v : ""))
+    : [];
+}
+
+function parseCSV(text) {
+  const out = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i + 1];
+    if (c == '"' && q && n == '"') { f += '"'; i++; continue; }
+    if (c == '"') { q = !q; continue; }
+    if (c == ',' && !q) { row.push(f); f = ""; continue; }
+    if ((c == '\n' || c == '\r') && !q) { if (f !== "" || row.length) { row.push(f); out.push(row); row = []; f = ""; } continue; }
+    f += c;
+  }
+  if (f !== "" || row.length) { row.push(f); out.push(row); }
+  return out;
+}
+
+async function fetchCSVRows() {
+  const res = await fetch(SHEET_CSV + "&cb=" + Date.now(), { cache: "no-store" });
+  const txt = await res.text();
+  const rows = parseCSV(txt);
+  return rows.slice(1); // ignore header CSV
+}
+
+async function load() {
+  let rows = [];
+  try { rows = await fetchGVizRows(); } catch (e) { rows = []; }
+  if (!rows || rows.length === 0) {
+    try { rows = await fetchCSVRows(); } catch (e) { rows = []; }
+  }
+  rows = rows.slice(0, 12).map(r => {
+    const c = Array.isArray(r) ? r : [];
+    while (c.length < 7) c.push("");
+    return c;
+  });
+  renderRows(rows);
+  document.getElementById("foot").textContent = "Mode: " + (rows.length ? "GViz/CSV" : "—") + " • Lignes: " + rows.length;
+}
+
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>
